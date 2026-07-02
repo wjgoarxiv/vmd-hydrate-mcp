@@ -1,0 +1,24 @@
+name: Publish to PyPI
+
+# Publishes the package to PyPI on each GitHub Release using Trusted Publishing
+# (OIDC — no stored token). Configure a PyPI "pending publisher" for this repo
+# with workflow filename `publish.yml` and environment `pypi` before the first
+# release: https://docs.pypi.org/trusted-publishers/
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  pypi-publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write   # REQUIRED to mint the OIDC token for Trusted Publishing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build
+        run: uv build --no-sources
+      - name: Publish
+        run: uv publish --trusted-publishing always

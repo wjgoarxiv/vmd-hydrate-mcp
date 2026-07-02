@@ -1,0 +1,21 @@
+{
+  "name": "vmd-hydrate-mcp-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion demo video for vmd-hydrate-mcp (composites real VMD-rendered frames).",
+  "scripts": {
+    "mp4": "remotion render src/index.ts demo out/demo.mp4 --codec=h264",
+    "gif": "remotion render src/index.ts demo out/demo.gif --codec=gif --every-nth-frame=2",
+    "studio": "remotion studio src/index.ts"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "typescript": "^5.5.0"
+  }
+}

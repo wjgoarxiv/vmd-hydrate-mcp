@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vmd-hydrate-mcp"
+version = "0.1.0"
+description = "An MCP server that drives VMD for GROMACS/LAMMPS trajectory analysis, scripted rendering, and clathrate-hydrate cage science (H-bond networks, F3/F4 order parameters)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "wjgoarxiv" }]
+keywords = ["mcp", "vmd", "gromacs", "lammps", "molecular-dynamics", "clathrate-hydrate", "order-parameter", "visualization"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Environment :: Console",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Chemistry",
+]
+dependencies = [
+  "numpy>=1.24",
+  "mcp>=1.4",
+]
+
+[project.optional-dependencies]
+# Trajectory/topology loading (GROMACS/LAMMPS/PDB) and topology-aware measures.
+mda = ["MDAnalysis>=2.7"]
+# TGA->PNG fallback when neither `sips` nor ImageMagick is present.
+img = ["pillow>=10"]
+dev = ["pytest>=8", "pytest-timeout>=2"]
+
+[project.scripts]
+vmd-hydrate-mcp = "vmd_hydrate_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/wjgoarxiv/vmd-hydrate-mcp"
+Repository = "https://github.com/wjgoarxiv/vmd-hydrate-mcp"
+Issues = "https://github.com/wjgoarxiv/vmd-hydrate-mcp/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vmd_hydrate_mcp"]
+
+# Keep the sdist lean — ship source + tests + docs text, not the demo media/video.
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/tests",
+  "/examples",
+  "/README.md",
+  "/README-Ko-KR.md",
+  "/LICENSE",
+  "/pyproject.toml",
+  "/server.json",
+  "/conftest.py",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "integration: tests that require a real VMD install (auto-skipped if absent)",
+]

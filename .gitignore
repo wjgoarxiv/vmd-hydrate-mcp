@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Session / research scratch (kept locally, not shipped)
+.litclaude/
+
+# Internal planning / QA notes — kept local, not published.
+PLAN.md
+QA_REPORT.md
+
+# Rendered artifacts / temp
+*.tga
+*.dat
+_render_tmp/
+scratch/
+
+# OS
+.DS_Store
+
+# Remotion / video build (regenerable; keep source + final assets in docs/media)
+video/frames/
+video/remotion/node_modules/
+video/remotion/public/frames/
+video/remotion/out/
+video/**/*.log
+examples/output/
