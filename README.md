@@ -35,6 +35,7 @@
 - **Hydrate Order Parameters** -- F3 (tetrahedrality) and F4 (⟨cos 3φ⟩) computed in pure NumPy, validated to the reference to 6 decimals (F4 = 0.926698 on the sII benchmark).
 - **H-bond Networks** -- water–water hydrogen-bond graph with coordination stats, the substrate for cage identification.
 - **Headless Rendering** -- CPU Tachyon ray-traced PNGs with no display or GPU, returned inline as images. Works on laptops, servers, and HPC.
+- **Attended (GUI) Mode** -- run fully offscreen (default), or set `VMD_HYDRATE_MCP_DISPLAY=gui` to open a **visible VMD window** and watch Claude load, color, rotate, and render your system live.
 - **GROMACS + LAMMPS** -- one server ingests `.gro/.xtc/.trr`, LAMMPS `.data/dump`, PDB, DCD, mmCIF.
 - **Secure by Default** -- filesystem allowlist + a Tcl command allowlist (not a bypassable denylist) + a loopback, token-gated control socket. No `run_tcl` foot-gun exposed.
 - **MCP-Native** -- clean English tool names and typed outputs; works in Claude Desktop, Claude Code, and any MCP client.
@@ -85,6 +86,19 @@ claude mcp add vmd-hydrate -- uvx vmd-hydrate-mcp
 > [!IMPORTANT]
 > Set `VMD_HYDRATE_MCP_ALLOW_DIR` (os-path-separated) to the directories the server may read. All file arguments are realpath-checked against this allowlist — paths outside it are refused.
 
+### Attended (GUI) mode
+
+By default the server drives VMD **headless** (offscreen). To instead open a **real VMD window you can watch** while Claude controls it live, add `VMD_HYDRATE_MCP_DISPLAY=gui` to the server's env:
+
+```json
+{ "mcpServers": { "vmd-hydrate": {
+  "command": "uvx", "args": ["vmd-hydrate-mcp"],
+  "env": { "VMD_HYDRATE_MCP_DISPLAY": "gui", "VMD_HYDRATE_MCP_ALLOW_DIR": "/path/to/data" }
+}}}
+```
+
+Then ask things like *"load prod.gro, show water as points and the surfactant as VDW, then slowly rotate it"* — the window updates in real time via `load_structure` → `add_representation` → `rotate_view`. (Requires a local desktop session; the same Tcl socket drives both modes.)
+
 ## MCP Tools
 
 | Tool | Purpose | Backend |
@@ -92,7 +106,10 @@ claude mcp add vmd-hydrate -- uvx vmd-hydrate-mcp
 | `vmd_status` | VMD version + molecules loaded in the live session | VMD |
 | `load_structure` | Load a structure/trajectory (returns a `molid`) | VMD |
 | `list_molecules` | List loaded molecules | VMD |
-| `set_representation` | Style/color/material/selection for a molecule | VMD |
+| `set_representation` | Style/color/material/selection for a molecule (replaces reps) | VMD |
+| `add_representation` | Layer another representation (multi-rep views) | VMD |
+| `clear_representations` | Remove all representations | VMD |
+| `rotate_view` / `zoom_view` / `reset_view` | Live camera control (visible in GUI mode) | VMD |
 | `render` | Headless PNG of the current view | VMD + Tachyon |
 | `resolve_selection` | Atom count for a selection (catches the 0-atom `.gro` trap) | MDAnalysis |
 | `measure_geometry` | Distance / angle / dihedral by atom index | MDAnalysis |

@@ -105,9 +105,18 @@ class VmdSession:
         self._port = None
         self._port_event.clear()
 
+        # GUI mode opens a visible OpenGL window (attended mode); headless uses
+        # the offscreen text device. In GUI mode VMD exits on stdin EOF, so we
+        # keep stdin as an open pipe (never closed until shutdown); headless
+        # takes /dev/null. Either way the same Tcl socket server drives it.
+        gui = self.settings.gui
+        args = [self.install.binary]
+        if not gui:
+            args += ["-dispdev", "text"]
+        args += ["-e", _SERVER_TCL]
         self._proc = subprocess.Popen(
-            [self.install.binary, "-dispdev", "text", "-e", _SERVER_TCL],
-            stdin=subprocess.DEVNULL,
+            args,
+            stdin=(subprocess.PIPE if gui else subprocess.DEVNULL),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             env=env,
@@ -152,6 +161,11 @@ class VmdSession:
         self._sock = None
         if self._proc is not None:
             try:
+                if self._proc.stdin:  # GUI mode: closing stdin (EOF) lets VMD exit
+                    try:
+                        self._proc.stdin.close()
+                    except OSError:
+                        pass
                 self._proc.terminate()
                 try:
                     self._proc.wait(timeout=3)

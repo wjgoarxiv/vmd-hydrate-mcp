@@ -77,3 +77,33 @@ def test_render_cages_nl_styling(tools):
         width=320, height=320,
     )
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+@skip_no_vmd
+def test_layered_reps_and_view_controls(tools):
+    a = tools.load_structure(FIX_GRO)
+    tools.clear_representations(a["molid"])
+    tools.add_representation(a["molid"], "VDW", "Name", "Opaque", "all")
+    tools.add_representation(a["molid"], "Lines", "ResName", "Opaque", "all")  # layered
+    tools.rotate_view("y", 45)
+    tools.zoom_view(1.3)
+    tools.reset_view(a["molid"])
+    png = tools.render(a["molid"], 300, 300)
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+@skip_no_vmd
+def test_gui_mode_launches_and_renders():
+    # attended/GUI mode opens a real window; verify the package path works
+    from vmd_hydrate_mcp.config import Settings
+
+    t = Tools(Settings(allow_dirs=[FIXTURES], display="gui"))
+    try:
+        status = t.vmd_status()
+        assert status["vmd_available"] is True
+        assert status["display"] == "gui"
+        a = t.load_structure(FIX_GRO)
+        png = t.render(a["molid"], 240, 240)
+        assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    finally:
+        t.shutdown()

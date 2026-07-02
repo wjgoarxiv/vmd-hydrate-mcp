@@ -5,4 +5,4 @@ The `analysis.hydrate` subpackage is pure-NumPy (no VMD, no MDAnalysis) so the
 scientific core is unit-testable in CI without a display or a VMD install.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

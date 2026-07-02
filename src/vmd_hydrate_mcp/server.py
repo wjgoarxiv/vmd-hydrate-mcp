@@ -144,6 +144,40 @@ def render_cages(
     return Image(data=png, format="png")
 
 
+@mcp.tool()
+def add_representation(molid: int, style: str = "VDW", color: str = "Name", material: str = "Opaque", selection: str = "all") -> dict:
+    """Add a representation WITHOUT clearing existing ones — layer several reps
+    (e.g. water as Points + solute as VDW). `color` is a coloring METHOD
+    (Name, ResName, ResType, Chain, Beta, ...); `style` is VDW/Lines/Points/
+    NewCartoon/Licorice/etc."""
+    return _tools.add_representation(molid, style, color, material, selection)
+
+
+@mcp.tool()
+def clear_representations(molid: int) -> dict:
+    """Remove all representations from a molecule (start a fresh view)."""
+    return _tools.clear_representations(molid)
+
+
+@mcp.tool()
+def rotate_view(axis: str = "y", degrees: float = 30.0) -> dict:
+    """Rotate the camera by `degrees` about an axis ('x'/'y'/'z'). In GUI/attended
+    mode (VMD_HYDRATE_MCP_DISPLAY=gui) the visible window updates live."""
+    return _tools.rotate_view(axis, degrees)
+
+
+@mcp.tool()
+def zoom_view(factor: float = 1.2) -> dict:
+    """Zoom the view by a multiplicative factor (>1 zoom in, <1 zoom out)."""
+    return _tools.zoom_view(factor)
+
+
+@mcp.tool()
+def reset_view(molid: int = 0) -> dict:
+    """Reset/fit the camera to the loaded molecule."""
+    return _tools.reset_view(molid)
+
+
 def main() -> None:
     mcp.run()
 

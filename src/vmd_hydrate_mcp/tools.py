@@ -60,6 +60,7 @@ class Tools:
             return {
                 "vmd_available": True,
                 "vmd": pong,
+                "display": self.settings.display,
                 "loaded_molecules": [
                     {"molid": m, "path": meta.path, "numatoms": meta.numatoms, "numframes": meta.numframes}
                     for m, meta in self.session.registry.items()
@@ -98,6 +99,32 @@ class Tools:
         sel = self._safe_selection(selection)
         res = self.session.call("recipe_representation", int(molid), style, color, material, sel)
         return {"molid": int(molid), "result": res}
+
+    def add_representation(
+        self, molid: int, style: str = "VDW", color: str = "Name",
+        material: str = "Opaque", selection: str = "all",
+    ) -> dict:
+        """Add a representation WITHOUT clearing existing ones (layer multiple
+        reps, e.g. water as Points + protein as NewCartoon)."""
+        sel = self._safe_selection(selection)
+        res = self.session.call("recipe_addrep", int(molid), style, color, material, sel)
+        return {"molid": int(molid), "result": res}
+
+    def clear_representations(self, molid: int) -> dict:
+        res = self.session.call("recipe_clearreps", int(molid))
+        return {"molid": int(molid), "result": res}
+
+    # -- live view control (visible immediately in GUI mode) ------------------
+    def rotate_view(self, axis: str = "y", degrees: float = 30.0) -> dict:
+        if axis not in ("x", "y", "z"):
+            raise ValueError("axis must be 'x', 'y', or 'z'")
+        return {"result": self.session.call("recipe_rotate", axis, float(degrees))}
+
+    def zoom_view(self, factor: float = 1.2) -> dict:
+        return {"result": self.session.call("recipe_scale", float(factor))}
+
+    def reset_view(self, molid: int = 0) -> dict:
+        return {"result": self.session.call("recipe_resetview", int(molid))}
 
     def render(self, molid: int, width: int = 800, height: int = 600) -> bytes:
         from .vmd.render import render_png

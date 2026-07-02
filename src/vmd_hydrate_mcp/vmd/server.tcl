@@ -102,6 +102,21 @@ proc recipe_addrep_colorid {molid style colorid material seltext} {
     return "reps [molinfo $molid get numreps] sel $nsel"
 }
 
+# Add a representation (without clearing existing ones), colored by a color
+# METHOD (Name, ResName, ResType, Chain, ...). For a solid custom color use
+# recipe_addrep_colorid instead. Enables layered multi-rep views (esp. GUI mode).
+proc recipe_addrep {molid style color material seltext} {
+    mol representation {*}$style
+    mol color $color
+    mol material $material
+    mol selection $seltext
+    mol addrep $molid
+    set sel [atomselect $molid $seltext]
+    set nsel [$sel num]
+    $sel delete
+    return "reps [molinfo $molid get numreps] sel $nsel"
+}
+
 # Rotate the camera by degrees about an axis (headless-safe; unlike display resize).
 proc recipe_rotate {axis degrees} {
     rotate $axis by $degrees
@@ -153,7 +168,7 @@ proc recipe_setcolor {colorid r g b} {
 
 set ::RECIPES {
     recipe_ping recipe_version recipe_load recipe_addfile recipe_listmols
-    recipe_delete recipe_representation recipe_render_scene recipe_set_frame
+    recipe_delete recipe_representation recipe_addrep recipe_render_scene recipe_set_frame
     recipe_clearreps recipe_addrep_colorid recipe_rotate recipe_resetview recipe_scale
     recipe_scene recipe_setcolor
 }
@@ -173,13 +188,40 @@ proc ::reply {chan code res} {
     flush $chan
 }
 
-proc ::serve {chan addr port} {
-    fconfigure $chan -translation binary -encoding binary -blocking 1
+# NON-BLOCKING connection handling. A blocking handler would freeze VMD's GUI
+# event loop in attended/GUI mode (and while idle-waiting for the next command),
+# so we drive everything from fileevent with a per-channel accumulation buffer.
+# This is identical in headless mode — `vwait ::forever` services the fileevents.
+proc ::on_close {chan} {
+    catch {close $chan}
+    catch {unset ::rbuf($chan)}
+    catch {unset ::rneed($chan)}
+}
+
+proc ::accept {chan addr port} {
+    fconfigure $chan -translation binary -encoding binary -blocking 0
+    set ::rbuf($chan) ""
+    set ::rneed($chan) -1
+    fileevent $chan readable [list ::on_readable $chan]
+}
+
+proc ::on_readable {chan} {
+    if {[catch {read $chan} data]} { ::on_close $chan; return }
+    append ::rbuf($chan) $data
+    if {$data eq "" && [eof $chan]} { ::on_close $chan; return }
     while {1} {
-        set hdr [gets $chan]
-        if {[eof $chan]} break
-        if {![string is integer -strict $hdr]} continue
-        set payload [read $chan $hdr]
+        if {$::rneed($chan) < 0} {
+            set nl [string first "\n" $::rbuf($chan)]
+            if {$nl < 0} return
+            set hdr [string range $::rbuf($chan) 0 [expr {$nl - 1}]]
+            set ::rbuf($chan) [string range $::rbuf($chan) [expr {$nl + 1}] end]
+            if {![string is integer -strict $hdr]} { ::reply $chan 1 "bad frame"; continue }
+            set ::rneed($chan) $hdr
+        }
+        if {[string length $::rbuf($chan)] < $::rneed($chan)} return
+        set payload [string range $::rbuf($chan) 0 [expr {$::rneed($chan) - 1}]]
+        set ::rbuf($chan) [string range $::rbuf($chan) $::rneed($chan) end]
+        set ::rneed($chan) -1
         set nl [string first "\n" $payload]
         if {$nl < 0} { ::reply $chan 1 "bad frame"; continue }
         set tok [string range $payload 0 [expr {$nl - 1}]]
@@ -188,10 +230,9 @@ proc ::serve {chan addr port} {
         set code [catch {::dispatch $req} res]
         ::reply $chan $code $res
     }
-    catch {close $chan}
 }
 
-if {[catch {socket -server ::serve -myaddr 127.0.0.1 0} ::srv]} {
+if {[catch {socket -server ::accept -myaddr 127.0.0.1 0} ::srv]} {
     puts "SERVER_FAIL $::srv"
     quit
 }

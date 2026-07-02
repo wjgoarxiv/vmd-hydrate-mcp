@@ -39,6 +39,7 @@
 - **하이드레이트 오더 파라미터** -- F3(사면체성)와 F4(⟨cos 3φ⟩)를 순수 NumPy로 계산하며, 레퍼런스와 소수점 6자리까지 검증되었습니다(sII 벤치마크에서 F4 = 0.926698).
 - **수소결합 네트워크** -- 물–물 수소결합 그래프와 배위수 통계. 케이지 식별의 기반입니다.
 - **헤드리스 렌더링** -- 디스플레이나 GPU 없이 CPU Tachyon 레이트레이싱 PNG를 생성해 이미지로 인라인 반환합니다. 노트북·서버·HPC 어디서든 동작합니다.
+- **Attended(GUI) 모드** -- 기본은 완전 오프스크린이지만, `VMD_HYDRATE_MCP_DISPLAY=gui`로 설정하면 **실제 VMD 창**이 떠서 Claude가 로드·색상·회전·렌더링하는 걸 **실시간으로 육안 관찰**할 수 있습니다.
 - **GROMACS + LAMMPS** -- 하나의 서버가 `.gro/.xtc/.trr`, LAMMPS `.data/dump`, PDB, DCD, mmCIF를 처리합니다.
 - **기본 보안** -- 파일시스템 화이트리스트 + Tcl 명령 화이트리스트(우회 가능한 블랙리스트가 아님) + 루프백·토큰 게이트 제어 소켓. 위험한 `run_tcl`을 노출하지 않습니다.
 - **MCP 네이티브** -- 깔끔한 영어 도구 이름과 타입 지정 출력. Claude Desktop, Claude Code, 모든 MCP 클라이언트에서 동작합니다.
@@ -89,6 +90,19 @@ claude mcp add vmd-hydrate -- uvx vmd-hydrate-mcp
 > [!IMPORTANT]
 > `VMD_HYDRATE_MCP_ALLOW_DIR`(OS 경로 구분자로 구분)를 서버가 읽어도 되는 디렉터리로 설정하세요. 모든 파일 인자는 이 화이트리스트에 대해 realpath로 검사되며, 벗어난 경로는 거부됩니다.
 
+### Attended(GUI) 모드
+
+기본은 VMD를 **헤드리스(오프스크린)**로 구동합니다. 대신 **실제 VMD 창을 띄워 Claude가 조작하는 걸 눈으로 보려면** 서버 env에 `VMD_HYDRATE_MCP_DISPLAY=gui`를 추가하세요:
+
+```json
+{ "mcpServers": { "vmd-hydrate": {
+  "command": "uvx", "args": ["vmd-hydrate-mcp"],
+  "env": { "VMD_HYDRATE_MCP_DISPLAY": "gui", "VMD_HYDRATE_MCP_ALLOW_DIR": "/path/to/data" }
+}}}
+```
+
+그런 다음 *"prod.gro 불러와서 물은 점으로, 계면활성제는 VDW로 표시하고 천천히 회전시켜줘"* 라고 하면 — `load_structure` → `add_representation` → `rotate_view`로 창이 실시간으로 바뀝니다. (로컬 데스크톱 세션 필요. 두 모드 모두 동일한 Tcl 소켓으로 구동.)
+
 ## MCP 도구
 
 | 도구 | 목적 | 백엔드 |
@@ -96,7 +110,10 @@ claude mcp add vmd-hydrate -- uvx vmd-hydrate-mcp
 | `vmd_status` | VMD 버전 + 세션에 로드된 분자 | VMD |
 | `load_structure` | 구조/궤적 로드(`molid` 반환) | VMD |
 | `list_molecules` | 로드된 분자 목록 | VMD |
-| `set_representation` | 스타일/색/재질/선택 설정 | VMD |
+| `set_representation` | 스타일/색/재질/선택 설정(표현 교체) | VMD |
+| `add_representation` | 표현 추가(다중 표현 겹치기) | VMD |
+| `clear_representations` | 모든 표현 제거 | VMD |
+| `rotate_view` / `zoom_view` / `reset_view` | 실시간 카메라 제어(GUI 모드에서 눈으로 보임) | VMD |
 | `render` | 현재 뷰의 헤드리스 PNG | VMD + Tachyon |
 | `resolve_selection` | 선택의 원자 수(빈 `.gro` 0-원자 함정 방지) | MDAnalysis |
 | `measure_geometry` | 원자 인덱스로 거리/각도/이면각 | MDAnalysis |
