@@ -14,9 +14,10 @@ venv/
 # Session / research scratch (kept locally, not shipped)
 .litclaude/
 
-# Internal planning / QA notes — kept local, not published.
+# Internal planning / QA / handoff notes — kept local, not published.
 PLAN.md
 QA_REPORT.md
+HANDOFF.md
 
 # Rendered artifacts / temp
 *.tga
